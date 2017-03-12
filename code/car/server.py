@@ -101,7 +101,7 @@ if __name__ == "__main__":
         
         # Update pin states
         steering_pin.ChangeDutyCycle(PWM_STEERING_DUTY_LOW + (PWM_STEERING_DUTY_HIGH - PWM_STEERING_DUTY_LOW) * (servo + 1.0) / 2.0)
-        motor_pin.ChangeDutyCycle(PWM_MOTOR_DUTY_LOW + (PWM_MOTOR_DUTY_HIGH - PWM_MOTOR_DUTY_LOW) * (servo + 1.0) / 2.0)
+        motor_pin.ChangeDutyCycle(PWM_MOTOR_DUTY_LOW + (PWM_MOTOR_DUTY_HIGH - PWM_MOTOR_DUTY_LOW) * (motor + 1.0) / 2.0)
         
         # Release lock
         state_lock.release()
