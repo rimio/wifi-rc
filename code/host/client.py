@@ -23,6 +23,8 @@ class Client:
     def __init__(self, ip, port):
         # Open socket for sending
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._ip = ip
+        self._port = port
     
     # Send input state
     def sendState(self, state):
