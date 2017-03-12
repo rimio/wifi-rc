@@ -2,14 +2,24 @@ import socket
 import threading
 import datetime
 import struct
+import RPi.GPIO as GPIO
 from time import sleep
+
+# BCM signal pins
+PIN_STEERING = 17
+PIN_MOTOR = 18
+
+# PWM settings
+PWM_FREQUENCY = 50
+PWM_STEERING_DUTY_LOW = 6.0
+PWM_STEERING_DUTY_HIGH = 9.0
 
 # IP and port for UDP listening
 UDP_IP = ""
 UDP_PORT = 9991
 
 # State lifespan (milliseconds)
-STATE_LIFESPAN = 200
+STATE_LIFESPAN = 100
 
 # Function waits for state updates over UDP
 def UdpThread():
@@ -33,6 +43,8 @@ def UdpThread():
         
         # Unpack state
         servo, motor = struct.unpack(">ff", message)
+        servo = max(min(servo, 1.0), -1.0)
+        motor = max(min(motor, 1.0), -1.0)
         
         # Set lifespan
         state_expiration = datetime.datetime.now() + datetime.timedelta(milliseconds=STATE_LIFESPAN)
@@ -42,6 +54,14 @@ def UdpThread():
         
 
 if __name__ == "__main__":
+    
+    # Set up GPIO
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(PIN_STEERING, GPIO.OUT)
+    
+    # Set up pins
+    steering_pin = GPIO.PWM(PIN_STEERING, PWM_FREQUENCY)
+    steering_pin.start((PWM_STEERING_DUTY_LOW + PWM_STEERING_DUTY_HIGH) / 2.0)
     
     # Servo state; floating point value in range [-1, 1]; -1 is full left, 1 is full right
     global servo
@@ -75,6 +95,7 @@ if __name__ == "__main__":
             motor = 0.0
         
         # Update pin states
+        steering_pin.ChangeDutyCycle(PWM_STEERING_DUTY_LOW + (PWM_STEERING_DUTY_HIGH - PWM_STEERING_DUTY_LOW) * (servo + 1.0) / 2.0)
         
         # Release lock
         state_lock.release()

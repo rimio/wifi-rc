@@ -8,8 +8,8 @@ class State:
     motor = 0.0
     
     def __init__(self, s, m):
-        self.servo = s
-        self.motor = m
+        self.servo = max(min(s, 1.0), -1.0)
+        self.motor = max(min(m, 1.0), -1.0)
 
 class Client:
     # IP address and port of server
