@@ -3,6 +3,8 @@ import threading
 import datetime
 import struct
 import RPi.GPIO as GPIO
+import cv2
+import numpy
 from time import sleep
 
 # BCM signal pins
@@ -13,8 +15,12 @@ PIN_MOTOR = 18
 PWM_FREQUENCY = 50
 PWM_STEERING_DUTY_LOW = 6.0
 PWM_STEERING_DUTY_HIGH = 9.0
-PWM_MOTOR_DUTY_LOW = 6.0
-PWM_MOTOR_DUTY_HIGH = 9.0
+PWM_MOTOR_DUTY_LOW = 7.1
+PWM_MOTOR_DUTY_HIGH = 7.9
+
+# IP and port for TCP listening
+TCP_IP = ""
+TCP_PORT = 9992
 
 # IP and port for UDP listening
 UDP_IP = ""
@@ -53,7 +59,43 @@ def UdpThread():
         
         # Release lock
         state_lock.release()
-        
+
+def TcpThread():
+    # Open capture
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.cv.CV_CAP_PROP_FPS, 10)
+    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),90]
+
+    # Open TCP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((TCP_IP, TCP_PORT))
+    sock.listen(1)
+
+    # Accept only one connection at a time
+    while True:
+        # Accept one connection
+        conn, addr = sock.accept()
+        print("Video connection accepted from " + str(addr))
+
+        while True:
+            # Capture frame
+            ret, frame = cap.read()
+            
+            # Encode jpeg
+            result, encoded = cv2.imencode('.jpg', frame, encode_param)
+            data = numpy.array(encoded)
+            stringData = data.tostring()
+
+            # Send frame
+            conn.send(str(len(stringData)).ljust(16));
+            conn.send(stringData);
+            
+            # Receive ok
+            conn.recv(2)
+
+        # Close connection
+        print("Connection closed ...")
+        conn.close()
 
 if __name__ == "__main__":
     
@@ -88,6 +130,10 @@ if __name__ == "__main__":
     # Run state update thread
     udpthread = threading.Thread(target = UdpThread)
     udpthread.start()
+
+    # Run video thread
+    tcpthread = threading.Thread(target = TcpThread)
+    tcpthread.start()
     
     # Main update loop
     while True:
@@ -107,7 +153,7 @@ if __name__ == "__main__":
         state_lock.release()
         
         # Log
-        print("State is servo=" + str(servo) + ", motor=" + str(motor))
+        #print("State is servo=" + str(servo) + ", motor=" + str(motor))
                 
         # yield CPU        
         sleep(0.05)

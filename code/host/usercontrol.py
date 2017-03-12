@@ -1,6 +1,15 @@
 import client
 import pygame
+import cv2
+import threading
+import socket
+import numpy as np
 from time import sleep
+
+# Server address
+SERVER_IP = "192.168.1.134"
+SERVER_CONTROL_PORT = 9991
+SERVER_VIDEO_PORT = 9992
 
 # Gamepad configuration
 GAMEPAD_ID = 0
@@ -32,7 +41,42 @@ def InitGamepad(joyId, steerAxis, motorAxis):
 # Get a state object from gamepad
 def StateFromGamepad(joy, steerAxis, motorAxis):
     return client.State(joy.get_axis(steerAxis), (joy.get_axis(motorAxis)+1)/2)
+
+# Receive full buffer
+def recvall(sock, count):
+    buf = b''
+    while count:
+        newbuf = sock.recv(count)
+        if not newbuf: return None
+        buf += newbuf
+        count -= len(newbuf)
+    return buf
+
+# Video thread function
+def VideoThread():
     
+    # Connect to video server
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((SERVER_IP, SERVER_VIDEO_PORT))
+    
+    while True:
+        # Receive frame
+        length = recvall(sock, 16)
+        stringData = recvall(sock, int(length))
+        
+        # Decode jpeg
+        data = np.fromstring(stringData, dtype='uint8')
+        image = cv2.imdecode(data, 1)
+        
+        # Show frame
+        cv2.imshow('Video Feed', image)
+        cv2.waitKey(1)
+        
+        # Send OK for next frame
+        sock.send(b'OK')
+    
+    # Close socket
+    sock.close()
 
 if __name__ == "__main__":
     
@@ -41,8 +85,11 @@ if __name__ == "__main__":
     joy = InitGamepad(GAMEPAD_ID, GAMEPAD_STEER_AXIS, GAMEPAD_MOTOR_AXIS)
     
     # Spawn a Client
-    cl = client.Client("192.168.1.134", 9991)
-    #cl = client.Client("127.0.0.1", 9991)
+    cl = client.Client(SERVER_IP, SERVER_CONTROL_PORT)
+    
+    # Start video thread
+    videothread = threading.Thread(target = VideoThread)
+    videothread.start()
     
     # Keyboard loop
     while True:
