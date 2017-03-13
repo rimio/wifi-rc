@@ -54,24 +54,28 @@ def VideoThread():
         imh, imw, imc = image.shape
         
         # Detect persons
-        (rects, weights) = hog.detectMultiScale(image, winStride=(8, 8), padding=(16, 16), scale=1.05)
+        (rects, weights) = hog.detectMultiScale(image, winStride=(8, 8), padding=(16, 16), scale=1.05, hitThreshold=0.15)
         headings = []
         tops = []
         for (x, y, w, h) in rects:
             headings.append(x + w/2)
             tops.append(y)
     
-        # Pick first person
+        # Pick closest detection
         picked = -1
+        pickedTop = 1000
         if len(headings) > 0:
-            picked = 0
+            for i in range(0, len(tops)):
+                if pickedTop > tops[i]:
+                    picked = i
+                    pickedTop = tops[i]
 
         # Follow person
         if picked > -1:
             servo = (headings[picked] - imw/2.0) * 2.0 / imw
             servo = max(min(servo, 1.0), -1.0)
             if (tops[picked] > imh*0.1):
-                motor = 0.8
+                motor = 0.7
             else:
                 motor = 0.0
             print("Tracking person x=" + str(headings[picked]) + " s=" + str(servo) + " m=" + str(motor))
@@ -84,6 +88,9 @@ def VideoThread():
             cv2.rectangle(image, (x, y), (x + w, y + h), (0), 2)
         for h in headings:
             cv2.line(image, (int(h), 0), (int(h), imh), (0), 2)
+    
+        if picked > -1:
+            cv2.rectangle(image, (rects[picked][0], rects[picked][1]), (rects[picked][0] + rects[picked][2], rects[picked][1] + rects[picked][3]), (128), 2)
 
         #vout.write(cv2.cvtColor(image, cv2.COLOR_GRAY2RGB))
         vout.write(image)
