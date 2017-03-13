@@ -7,14 +7,14 @@ import numpy as np
 from time import sleep
 
 # Server address
-SERVER_IP = "192.168.1.134"
+SERVER_IP = "172.172.1.132"
 SERVER_CONTROL_PORT = 9991
 SERVER_VIDEO_PORT = 9992
 
 # Gamepad configuration
 GAMEPAD_ID = 0
 GAMEPAD_STEER_AXIS = 0
-GAMEPAD_MOTOR_AXIS = 5
+GAMEPAD_MOTOR_AXIS = 4
 GAMEPAD_DEADZONE = 0.05
 
 # Initialize gamepad and wait for neutral state
@@ -28,7 +28,7 @@ def InitGamepad(joyId, steerAxis, motorAxis):
         pass
     
     # Wait for neutral state (0 for steer axis, -1 for motor axis)
-    while abs(joy.get_axis(steerAxis)) > GAMEPAD_DEADZONE or joy.get_axis(motorAxis) > (-1 + GAMEPAD_DEADZONE):
+    while abs(joy.get_axis(steerAxis)) > GAMEPAD_DEADZONE or abs(joy.get_axis(motorAxis)) > GAMEPAD_DEADZONE:
         for event in pygame.event.get():
             pass
         print("Please bring gamepad to neutral state. Current state (steer=" + str(joy.get_axis(steerAxis)) + ", motor=" + str(joy.get_axis(motorAxis)) + ")")
@@ -40,7 +40,7 @@ def InitGamepad(joyId, steerAxis, motorAxis):
 
 # Get a state object from gamepad
 def StateFromGamepad(joy, steerAxis, motorAxis):
-    return client.State(joy.get_axis(steerAxis), (joy.get_axis(motorAxis)+1)/2)
+    return client.State(joy.get_axis(steerAxis), -joy.get_axis(motorAxis))
 
 # Receive full buffer
 def recvall(sock, count):
