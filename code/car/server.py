@@ -15,7 +15,7 @@ PIN_MOTOR = 18
 PWM_FREQUENCY = 50
 PWM_STEERING_DUTY_LOW = 6.0
 PWM_STEERING_DUTY_HIGH = 9.0
-PWM_MOTOR_DUTY_LOW = 7.1
+PWM_MOTOR_DUTY_LOW = 6.7
 PWM_MOTOR_DUTY_HIGH = 7.9
 
 # IP and port for TCP listening
@@ -64,7 +64,9 @@ def TcpThread():
     # Open capture
     cap = cv2.VideoCapture(0)
     cap.set(cv2.cv.CV_CAP_PROP_FPS, 10)
-    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),90]
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH,640);
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT,360);
+    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),60]
 
     # Open TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,7 +81,9 @@ def TcpThread():
 
         while True:
             # Capture frame
-            ret, frame = cap.read()
+            ret, oframe = cap.read()
+            frame = cv2.resize(oframe, (320, 180), interpolation=cv2.INTER_NEAREST)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
             
             # Encode jpeg
             result, encoded = cv2.imencode('.jpg', frame, encode_param)
