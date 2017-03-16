@@ -7,7 +7,7 @@ import numpy as np
 from time import sleep
 
 # Server address
-SERVER_IP = "172.172.1.132"
+SERVER_IP = "192.168.81.210"
 SERVER_CONTROL_PORT = 9991
 SERVER_VIDEO_PORT = 9992
 
@@ -71,9 +71,6 @@ def VideoThread():
         # Show frame
         cv2.imshow('Video Feed', image)
         cv2.waitKey(1)
-        
-        # Send OK for next frame
-        sock.send(b'OK')
     
     # Close socket
     sock.close()

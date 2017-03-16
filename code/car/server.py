@@ -64,8 +64,8 @@ def TcpThread():
     # Open capture
     cap = cv2.VideoCapture(0)
     cap.set(cv2.cv.CV_CAP_PROP_FPS, 10)
-    cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH,640);
-    cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT,360);
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 416);
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240);
     encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),60]
 
     # Open TCP socket
@@ -82,8 +82,7 @@ def TcpThread():
         while True:
             # Capture frame
             ret, oframe = cap.read()
-            frame = cv2.resize(oframe, (320, 180), interpolation=cv2.INTER_NEAREST)
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            frame = cv2.cvtColor(oframe, cv2.COLOR_RGB2GRAY)
             
             # Encode jpeg
             result, encoded = cv2.imencode('.jpg', frame, encode_param)
@@ -93,9 +92,6 @@ def TcpThread():
             # Send frame
             conn.send(str(len(stringData)).ljust(16));
             conn.send(stringData);
-            
-            # Receive ok
-            conn.recv(2)
 
         # Close connection
         print("Connection closed ...")
